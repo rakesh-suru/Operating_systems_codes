@@ -1,0 +1,79 @@
+#include <stdio.h>
+#include <limits.h>
+
+void findWaitingTime(int processes[], int n, int bt[], int at[], int wt[]) {
+    int rt[n]; // Remaining time
+    for (int i = 0; i < n; i++) {
+        rt[i] = bt[i];
+        wt[i] = 0;
+    }
+
+    int t = 0; // Current time
+    int complete = 0; // Number of completed processes
+    int min_bt, min_bt_index = 0;
+    int finish_time;
+
+    while (complete != n) {
+        min_bt = INT_MAX;
+        // Find the process with the shortest remaining time
+        for (int j = 0; j < n; j++) {
+            if (at[j] <= t && rt[j] < min_bt && rt[j] > 0) {
+                min_bt = rt[j];
+                min_bt_index = j;
+            }
+        }
+
+        if (min_bt == INT_MAX) {
+            t++; // No process is currently available
+            continue;
+        }
+
+        rt[min_bt_index]--; // Execute the shortest job
+        if (rt[min_bt_index] == 0) {
+            complete++;
+            finish_time = t + 1;
+            wt[min_bt_index] = finish_time - bt[min_bt_index] - at[min_bt_index];
+            if (wt[min_bt_index] < 0) {
+                wt[min_bt_index] = 0;
+            }
+        }
+        t++;
+    }
+}
+
+void findTurnAroundTime(int processes[], int n, int bt[], int wt[], int tat[]) {
+    for (int i = 0; i < n; i++) {
+        tat[i] = bt[i] + wt[i];
+    }
+}
+
+void findAvgTime(int processes[], int n, int bt[], int at[]) {
+    int wt[n], tat[n];
+    int total_wt = 0, total_tat = 0;
+
+    findWaitingTime(processes, n, bt, at, wt);
+    findTurnAroundTime(processes, n, bt, wt, tat);
+
+    printf("Processes\tBurst time\tArrival time\tWaiting time\tTurn around time\n");
+
+    for (int i = 0; i < n; i++) {
+        total_wt += wt[i];
+        total_tat += tat[i];
+        printf(" %d\t\t%d\t\t%d\t\t%d\t\t%d\n", i + 1, bt[i], at[i], wt[i], tat[i]);
+    }
+
+    printf("Average waiting time = %.2f\n", (float)total_wt / n);
+    printf("Average turn around time = %.2f\n", (float)total_tat / n);
+}
+
+int main() {
+    int processes[] = {1, 2, 3}; // Process IDs
+    int n = sizeof(processes) / sizeof(processes[0]);
+
+    int burst_time[] = {6, 8, 7}; // Burst times of the processes
+    int arrival_time[] = {0, 1, 2}; // Arrival times of the processes
+
+    findAvgTime(processes, n, burst_time, arrival_time);
+
+    return 0;
+}
