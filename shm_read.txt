@@ -1,0 +1,29 @@
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+#define BUF_SIZE 1024
+#define SHM_KEY 0x1234
+
+struct shmseg {
+    int cnt;
+    int complete;
+    char buf[BUF_SIZE];
+};
+
+int main() {
+    int shmid = shmget(SHM_KEY, sizeof(struct shmseg), 0644 | IPC_CREAT);
+    struct shmseg *shmp = shmat(shmid, NULL, 0);
+
+    while (!shmp->complete) {
+        printf("Shared Memory contains: \"%s\"\n", shmp->buf);
+        printf("Read %d bytes\n", shmp->cnt);
+        sleep(3);
+    }
+
+    shmdt(shmp);
+    printf("Read complete\n");
+
+    return 0;
+}

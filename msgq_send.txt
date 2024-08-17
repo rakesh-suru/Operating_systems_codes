@@ -1,0 +1,37 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
+#define PERMS 0644
+
+struct my_msgbuf {
+    long mtype;
+    char mtext[200];
+};
+
+int main(void) {
+    struct my_msgbuf buf;
+    int msqid;
+    key_t key;
+
+    key = ftok("msgq.txt", 'B');
+    msqid = msgget(key, PERMS | IPC_CREAT);
+
+    buf.mtype = 1;
+    printf("Enter messages, ^D to quit:\n");
+
+    while (fgets(buf.mtext, sizeof buf.mtext, stdin) != NULL) {
+        buf.mtext[strcspn(buf.mtext, "\n")] = '\0';  // Remove newline
+        msgsnd(msqid, &buf, strlen(buf.mtext) + 1, 0);
+    }
+
+    strcpy(buf.mtext, "end");
+    msgsnd(msqid, &buf, strlen(buf.mtext) + 1, 0);
+
+    msgctl(msqid, IPC_RMID, NULL);  // Cleanup
+    printf("Done sending messages.\n");
+
+    return 0;
+}

@@ -1,0 +1,22 @@
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+    int pipefds[2];
+    char writemessages[2][20] = {"Hi", "Hello"};
+    char readmessage[20];
+
+    if (pipe(pipefds) == -1) {
+        perror("Unable to create pipe");
+        return 1;
+    }
+
+    for (int i = 0; i < 2; i++) {
+        printf("Writing to pipe - Message %d is %s\n", i + 1, writemessages[i]);
+        write(pipefds[1], writemessages[i], sizeof(writemessages[i]));
+        read(pipefds[0], readmessage, sizeof(readmessage));
+        printf("Reading from pipe - Message %d is %s\n", i + 1, readmessage);
+    }
+
+    return 0;
+}

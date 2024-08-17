@@ -1,0 +1,41 @@
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <string.h>
+#include <unistd.h>
+
+#define BUF_SIZE 1024
+#define SHM_KEY 0x1234
+
+struct shmseg {
+    int cnt;
+    int complete;
+    char buf[BUF_SIZE];
+};
+
+int fill_buffer(char *bufptr, int size) {
+    static char ch = 'A';
+    memset(bufptr, ch, size - 1);
+    bufptr[size - 1] = '\0';
+    ch = (ch == 'Z') ? 'A' : ch + 1;
+    return strlen(bufptr);
+}
+
+int main() {
+    int shmid = shmget(SHM_KEY, sizeof(struct shmseg), 0644 | IPC_CREAT);
+    struct shmseg *shmp = shmat(shmid, NULL, 0);
+
+    for (int i = 0; i < 5; i++) {
+        shmp->cnt = fill_buffer(shmp->buf, BUF_SIZE);
+        shmp->complete = 0;
+        printf("Wrote %d bytes\n", shmp->cnt);
+        sleep(3);
+    }
+
+    shmp->complete = 1;
+    shmdt(shmp);
+    shmctl(shmid, IPC_RMID, 0);
+    printf("Write complete\n");
+
+    return 0;
+}
